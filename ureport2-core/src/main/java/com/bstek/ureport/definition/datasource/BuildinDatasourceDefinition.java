@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.bstek.ureport.build.Context;
 import com.bstek.ureport.build.Dataset;
 import com.bstek.ureport.definition.dataset.DatasetDefinition;
 import com.bstek.ureport.definition.dataset.SqlDatasetDefinition;
@@ -34,7 +35,7 @@ public class BuildinDatasourceDefinition implements DatasourceDefinition {
 	private String name;
 	private List<DatasetDefinition> datasets;
 	
-	public List<Dataset> buildDatasets(Connection conn,Map<String,Object> parameters){
+	public List<Dataset> buildDatasets(Connection conn,Context context){
 		if(datasets==null || datasets.size()==0){
 			return null;
 		}
@@ -42,7 +43,7 @@ public class BuildinDatasourceDefinition implements DatasourceDefinition {
 		try{
 			for(DatasetDefinition dsDef:datasets){
 				SqlDatasetDefinition sqlDataset=(SqlDatasetDefinition)dsDef;
-				Dataset ds=sqlDataset.buildDataset(parameters, conn);
+				Dataset ds=sqlDataset.buildDataset(context, conn);
 				list.add(ds);
 			}			
 		}finally{
@@ -53,6 +54,26 @@ public class BuildinDatasourceDefinition implements DatasourceDefinition {
 			}
 		}
 		return list;
+	}
+	public Dataset buildDataset(String datasetName,Connection conn,Context context){
+		if(datasets==null || datasets.size()==0){
+			return null;
+		}
+		try{
+			for(DatasetDefinition dsDef:datasets){
+				if(dsDef.getName().equals(datasetName)){
+				  SqlDatasetDefinition sqlDataset=(SqlDatasetDefinition)dsDef;
+				  return sqlDataset.buildDataset(context, conn);
+				}
+			}			
+		}finally{
+			try {
+				conn.close();
+			} catch (SQLException e) {
+				throw new ReportComputeException(e);
+			}
+		}
+		return null;
 	}
 	
 	@Override

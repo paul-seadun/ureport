@@ -26,6 +26,7 @@ import org.springframework.context.ApplicationContext;
 
 import com.bstek.ureport.Utils;
 import com.bstek.ureport.chart.ChartData;
+import com.bstek.ureport.definition.ReportDefinition;
 import com.bstek.ureport.definition.mapping.MappingType;
 import com.bstek.ureport.definition.value.SimpleValue;
 import com.bstek.ureport.definition.value.Value;
@@ -52,6 +53,7 @@ public class Context {
 	private Map<String,Dataset> datasetMap;
 	private ApplicationContext applicationContext;
 	private ReportBuilder reportBuilder;
+	private ReportDefinition reportDefinition;
 	private Map<String,Object> parameters;
 	private HideRowColumnBuilder hideRowColumnBuilder;
 	private ElCalculator elCalculator=new ElCalculator();
@@ -60,6 +62,7 @@ public class Context {
 	private Map<Row,Map<Column,Cell>> blankCellsMap=new HashMap<Row,Map<Column,Cell>>();
 	private Map<Row,Integer> fillBlankRowsMap=new HashMap<Row,Integer>();
 	private Map<String,ChartData> chartDataMap=new HashMap<String,ChartData>();
+	/*
 	public Context(ReportBuilder reportBuilder,Report report,Map<String,Dataset> datasetMap,ApplicationContext applicationContext,Map<String,Object> parameters,HideRowColumnBuilder hideRowColumnBuilder) {
 		this.reportBuilder=reportBuilder;
 		this.report = report;
@@ -67,6 +70,28 @@ public class Context {
 		this.datasetMap=datasetMap;
 		this.applicationContext=applicationContext;
 		this.parameters=parameters;
+		this.hideRowColumnBuilder=hideRowColumnBuilder;
+		Map<String,List<Cell>> cellsMap=report.getCellsMap();
+		for(String key:cellsMap.keySet()){
+			if(key.equals(report.getRootCell().getName())){
+				continue;
+			}
+			List<Cell> list=new ArrayList<Cell>();
+			list.addAll(cellsMap.get(key));
+			unprocessedCellsMap.put(key, list);
+		}
+		this.rootCell=new Cell();
+		this.rootCell.setName("ROOT");
+	}
+	*/
+	public Context(ReportBuilder reportBuilder,Report report,ReportDefinition reportDefinition,ApplicationContext applicationContext,Map<String,Object> parameters,HideRowColumnBuilder hideRowColumnBuilder) {
+		this.reportBuilder=reportBuilder;
+		this.report = report;
+		report.setContext(this);
+		this.datasetMap=new HashMap<String,Dataset>();
+		this.applicationContext=applicationContext;
+		this.parameters=parameters;
+		this.reportDefinition = reportDefinition;
 		this.hideRowColumnBuilder=hideRowColumnBuilder;
 		Map<String,List<Cell>> cellsMap=report.getCellsMap();
 		for(String key:cellsMap.keySet()){
@@ -225,10 +250,13 @@ public class Context {
 	}
 
 	public List<?> getDatasetData(String name){
-		if(datasetMap.containsKey(name)){
+		if(datasetMap!=null && datasetMap.containsKey(name)){
 			return datasetMap.get(name).getData();
 		}
-		throw new DatasetUndefinitionException(name);
+		else{
+			return new ArrayList<Object>();
+		}
+//		throw new DatasetUndefinitionException(name);
 	}
 	
 	public Map<String, Dataset> getDatasetMap() {
@@ -314,5 +342,9 @@ public class Context {
 	
 	public Cell getRootCell() {
 		return rootCell;
+	}
+
+	public ReportDefinition getReportDefinition() {
+		return reportDefinition;
 	}
 }

@@ -44,6 +44,16 @@ public class SpringBeanDatasourceDefinition implements DatasourceDefinition {
 		}
 		return list;
 	}
+	public Dataset getDataset(String datasetName,ApplicationContext applicationContext,Map<String,Object> parameters){
+		Object targetBean=applicationContext.getBean(beanId);
+		for(DatasetDefinition dsDef:datasets){
+			BeanDatasetDefinition beanDef=(BeanDatasetDefinition)dsDef;
+			if(dsDef.getName().equals(datasetName)){
+			   return beanDef.buildDataset(name,targetBean, parameters);
+			}
+		}
+		return null;
+	}
 	
 	@Override
 	public DatasourceType getType() {

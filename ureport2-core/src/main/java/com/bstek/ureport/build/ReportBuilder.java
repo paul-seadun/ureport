@@ -72,8 +72,8 @@ public class ReportBuilder extends BasePagination implements ApplicationContextA
 	}
 	public Report buildReport(ReportDefinition reportDefinition,Map<String,Object> parameters) {
 		Report report = reportDefinition.newReport();
-		Map<String,Dataset> datasetMap=buildDatasets(reportDefinition, parameters, applicationContext);
-		Context context = new Context(this,report,datasetMap,applicationContext,parameters,hideRowColumnBuilder);
+//		Map<String,Dataset> datasetMap=buildDatasets(reportDefinition, parameters, applicationContext);
+		Context context = new Context(this,report,reportDefinition,applicationContext,parameters,hideRowColumnBuilder);
 		long start=System.currentTimeMillis();
 		List<Cell> cells=new ArrayList<Cell>();
 		cells.add(report.getRootCell());
@@ -117,7 +117,7 @@ public class ReportBuilder extends BasePagination implements ApplicationContextA
 		}
 	}
 	
-	private Map<String,Dataset> buildDatasets(ReportDefinition reportDefinition,Map<String,Object> parameters,ApplicationContext applicationContext){
+	public Map<String,Dataset> buildDatasets(ReportDefinition reportDefinition,Map<String,Object> parameters,ApplicationContext applicationContext){
 		Map<String,Dataset> datasetMap=new HashMap<String,Dataset>();
 		List<DatasourceDefinition> datasources=reportDefinition.getDatasources();
 		if(datasources==null){
@@ -186,6 +186,69 @@ public class ReportBuilder extends BasePagination implements ApplicationContextA
 			}
 		}
 		return datasetMap;
+	}
+	public Dataset buildDataset(String datasetName,ReportDefinition reportDefinition,Map<String,Object> parameters,ApplicationContext applicationContext){
+		List<DatasourceDefinition> datasources=reportDefinition.getDatasources();
+		if(datasources==null){
+			return null;
+		}
+		for(DatasourceDefinition dsDef:datasources){
+			String dsName=dsDef.getName();
+			
+			if(dsDef instanceof JdbcDatasourceDefinition){
+				Connection conn=null;
+				try{
+					if(datasourceProviderMap.containsKey(dsName)){
+						conn=datasourceProviderMap.get(dsName).getConnection();
+					}
+					JdbcDatasourceDefinition ds=(JdbcDatasourceDefinition)dsDef;
+					Dataset set=ds.buildDataset(datasetName,conn, parameters);
+					if(set!=null){
+						return set;
+					}
+				}finally{
+					if(conn!=null){
+						try {
+							conn.close();
+						} catch (SQLException e) {}
+					}
+				}
+			}else if(dsDef instanceof SpringBeanDatasourceDefinition){
+				SpringBeanDatasourceDefinition ds=(SpringBeanDatasourceDefinition)dsDef;
+				Dataset set = ds.getDataset(datasetName,applicationContext, parameters);
+				if(set!=null){
+					return set;
+				}
+			}else if(dsDef instanceof BuildinDatasourceDefinition){
+				Connection conn=null;
+				try{
+					if(datasourceProviderMap.containsKey(dsName)){
+						conn=datasourceProviderMap.get(dsName).getConnection();
+					}
+					for(BuildinDatasource datasource:Utils.getBuildinDatasources()){
+						if(datasource.name().equals(dsName)){
+							conn=datasource.getConnection();
+							break;
+						}
+					}
+					if(conn==null){
+						throw new ReportComputeException("Buildin datasource ["+dsName+"] not exist.");
+					}
+					BuildinDatasourceDefinition ds=(BuildinDatasourceDefinition)dsDef;
+					Dataset set =ds.buildDataset(datasetName,conn, parameters);
+					if(set !=null){
+						return set;
+					}
+				}finally{
+					if(conn!=null){
+						try {
+							conn.close();
+						} catch (SQLException e) {}
+					}
+				}
+			}
+		}
+		return null;
 	}
 	
 	private void doFillBlankRows(Report report,Context context){

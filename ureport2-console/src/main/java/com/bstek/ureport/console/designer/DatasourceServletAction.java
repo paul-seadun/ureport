@@ -300,6 +300,9 @@ public class DatasourceServletAction extends RenderPageServletAction {
 			ObjectExpressionData data=(ObjectExpressionData)exprData;
 			Object obj=data.getData();
 			if(obj!=null){
+				if(obj instanceof Map && ((Map)obj).isEmpty()){
+					return "%%";
+				}
 				String s=obj.toString();
 				s=s.replaceAll("\\\\", "");
 				sqlForUse=s;

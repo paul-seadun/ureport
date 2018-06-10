@@ -16,8 +16,12 @@
 package com.bstek.ureport.expression.function;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+
+import org.springframework.stereotype.Component;
 
 import com.bstek.ureport.build.BindData;
 import com.bstek.ureport.build.Context;
@@ -32,6 +36,8 @@ import com.bstek.ureport.model.Cell;
  * @author Jacky.gao
  * @since 2017年5月23日
  */
+
+@Component
 public class FormatDateFunction implements Function {
 	private final String defaultPattern="yyyy-MM-dd HH:mm:ss";
 	@Override
@@ -52,26 +58,52 @@ public class FormatDateFunction implements Function {
 					pattern=list.get(1).toString();
 				}
 			}else if(data instanceof ObjectExpressionData){
-				obj=((ObjectExpressionData)data).getData();
+				pattern=((ObjectExpressionData)data).getData().toString();
 			}else if(data instanceof BindDataListExpressionData){
 				BindDataListExpressionData bindDataList=(BindDataListExpressionData)data;
 				List<BindData> list=bindDataList.getData();
-				if(list.size()>0){
-					obj=list.get(0).getValue();
-				}
-				if(list.size()>1){
-					pattern=list.get(1).getValue().toString();
-				}
+				obj = list;
 			}
+			
 		}
 		if(obj==null){
 			throw new ReportComputeException("Function [formatdate] need a Date type parameter at least");
 		}else{
+			
 			if(obj instanceof Date){
 				SimpleDateFormat sd=new SimpleDateFormat(pattern);
 				return sd.format((Date)obj);
-			}else{
-				throw new ReportComputeException("Function [formatdate] first parameter is Date type");
+			}
+			else if(obj instanceof Long){
+				SimpleDateFormat sd=new SimpleDateFormat(pattern);
+				Calendar cal = Calendar.getInstance();
+				cal.setTimeInMillis((Long)obj);
+				String strDate = sd.format(cal.getTime());
+				System.out.println(pattern+"------------>"+strDate);
+				return strDate;
+			}
+			else if(obj instanceof List){
+				List<String> items = new ArrayList<String>();
+				List<BindData> list = (List<BindData>)obj;
+				for(BindData bd : list){
+					Object dt = bd.getValue();
+					if(dt instanceof Date){
+						SimpleDateFormat sd=new SimpleDateFormat(pattern);
+						items.add(sd.format((Date)dt));
+					}
+					else if(dt instanceof Long){
+						SimpleDateFormat sd=new SimpleDateFormat(pattern);
+						Calendar cal = Calendar.getInstance();
+						cal.setTimeInMillis((Long)dt);
+						String strDate = sd.format(cal.getTime());
+						items.add(strDate);
+						System.out.println(pattern+"------------>"+strDate);
+					}
+				}
+				return items;
+			}
+			else{
+				throw new ReportComputeException("Function [formatdate] first parameter is Date type:"+obj.getClass().getSimpleName());
 			}
 		}
 	}

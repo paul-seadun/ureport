@@ -108,9 +108,16 @@ public class FontBuilder implements ApplicationContextAware{
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		FontBuilder.applicationContext=applicationContext;
 		GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		String[] fontNames=environment.getAvailableFontFamilyNames();
-		for(String name:fontNames){
-			systemFontNameList.add(name);
+		if(environment!=null){
+			try{
+				String[] fontNames=environment.getAvailableFontFamilyNames();
+				for(String name:fontNames){
+					systemFontNameList.add(name);
+				}
+			}
+			catch(Throwable e){
+				e.printStackTrace();
+			}
 		}
 		Collection<FontRegister> fontRegisters=applicationContext.getBeansOfType(FontRegister.class).values();
 		for(FontRegister fontReg:fontRegisters){

@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.bstek.ureport.Utils;
 import com.bstek.ureport.build.Context;
+import com.bstek.ureport.build.Dataset;
 import com.bstek.ureport.definition.value.DatasetValue;
 import com.bstek.ureport.definition.value.ExpressionValue;
 import com.bstek.ureport.definition.value.Value;
@@ -37,6 +38,12 @@ import com.bstek.ureport.model.Cell;
  */
 public class DataUtils {
 	public static List<?> fetchData(Cell cell, Context context,String datasetName) {
+		if(context.getDatasetMap().containsKey(datasetName)==false){
+			Dataset ds = context.getReportBuilder().buildDataset(datasetName, context.getReportDefinition(), context.getParameters(), context.getApplicationContext());
+			if(ds!=null){
+				context.getDatasetMap().put(datasetName, ds);
+			}
+		}
 		Cell leftCell=fetchLeftCell(cell, context, datasetName);
 		Cell topCell=fetchTopCell(cell, context, datasetName);
 		List<Object> leftList=null,topList=null;
@@ -92,6 +99,9 @@ public class DataUtils {
 	}
 	public static Cell fetchLeftCell(Cell cell, Context context,String datasetName){
 		Cell targetCell=null;
+		if(cell==null){
+			return null;
+		}
 		Cell leftCell=cell.getLeftParentCell();
 		if(leftCell!=null){
 			Value leftCellValue=leftCell.getValue();
@@ -109,6 +119,9 @@ public class DataUtils {
 	}
 	public static Cell fetchTopCell(Cell cell, Context context,String datasetName){
 		Cell targetCell=null;
+		if(cell==null){
+			return null;
+		}
 		Cell topCell=cell.getTopParentCell();
 		if(topCell!=null){
 			Value topCellValue=topCell.getValue();

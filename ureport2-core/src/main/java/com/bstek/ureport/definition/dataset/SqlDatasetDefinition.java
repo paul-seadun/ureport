@@ -47,9 +47,8 @@ public class SqlDatasetDefinition implements DatasetDefinition {
 	private List<Parameter> parameters;
 	private List<Field> fields;
 	private Expression sqlExpression;
-	public Dataset buildDataset(Map<String,Object> parameterMap,Connection conn){
+	public Dataset buildDataset(Context context,Connection conn){
 		String sqlForUse=sql;
-		Context context=new Context(null,parameterMap);
 		if(sqlExpression!=null){
 			sqlForUse=executeSqlExpr(sqlExpression, context);
 		}else{
@@ -64,7 +63,7 @@ public class SqlDatasetDefinition implements DatasetDefinition {
 			}
 		}
 		Utils.logToConsole("RUNTIME SQL:"+sqlForUse);
-		Map<String, Object> pmap = buildParameters(parameterMap);
+		Map<String, Object> pmap = buildParameters(context.getParameters());
 		if(ProcedureUtils.isProcedure(sqlForUse)){
 			List<Map<String,Object>> result = ProcedureUtils.procedureQuery(sqlForUse,pmap,conn);
 			return new Dataset(name,result);
@@ -82,6 +81,9 @@ public class SqlDatasetDefinition implements DatasetDefinition {
 			ObjectExpressionData data=(ObjectExpressionData)exprData;
 			Object obj=data.getData();
 			if(obj!=null){
+				if(obj instanceof Map && ((Map)obj).isEmpty()){
+					return "%%";
+				}
 				String s=obj.toString();
 				s=s.replaceAll("\\\\", "");
 				sqlForUse=s;
